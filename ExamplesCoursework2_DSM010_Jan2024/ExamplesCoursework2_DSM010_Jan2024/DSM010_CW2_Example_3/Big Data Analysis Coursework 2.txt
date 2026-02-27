@@ -1,0 +1,350 @@
+Coursework 2 Component 1: Topic Proposal 
+ 
+ 
+1.  Introduction 
+ 
+Customer churn is one of the challenges that large companies face due to its effect 
+on the revenue, especially for the company gaining revenue from user subscription 
+such as telecom company and stream media company. Hence, in this coursework, we 
+want  to  build  a  prediction  model  to  predict  the  likelihood  of  churning  for  music 
+streaming  app  user  by  using  the  datasets  from  Sparkify.  Sparkify  is  a  virtual  music 
+streaming service created by Udacity whereby user can enjoy music without fee by 
+watching the advertisement in between songs or subscribe for a premium subscription 
+for a fee. The users are allowed to upgrade, downgrade or cancel the subscription at 
+any  time.  Generally,  it  takes  lesser  cost  to  keep  and  sustain  the  existing  user  than 
+acquire new user. Therefore, we like to predict the user which is likely to churn in order 
+to provide targeted offers to these users before they churn and cancel the cancel the 
+subscription. 
+ 
+ 
+1.1  Project Goal 
+ 
+The project goal is to create a binary classifier based on the datasets to analyze the 
+activities of the user with Sparkify virtual services and define the user that potential to 
+cancel  the  service and  churn.  We  aim  to  study  the  user  churn  from  the  big  data of 
+Sparkify  user  logs  and  apply  machine  learning  technique  to  create  an  optimum 
+predictive model on user churn. The study also helps us to understand the application 
+of PySpark and MLLib. Eventually, our main objective is to compare a few predictive 
+models and obtain the accuracy of each model to deploy the best model on user based 
+churning prediction through machine learning approach. 
+ 
+ 
+ 
+ 
+1.2  Data Collection and Summary 
+ 
+Due to the size of the datasets which is relatively large, we required to work on the 
+data with PySpark, Spark ML and Apache Hadoop. The path to the studied data on 
+HDFS is 'hdfs://www.dlmd.com:9000/input/mini_sparkify_event_data.json'. In this 
+coursework, we will be using the subset of the 12gb data which contain 286,500 rows 
+and 18 columns of data.   
+ 
+The data file is in JSON format, and it was read by PySpark dataframe for the analysis 
+and model prediction. By running jsondataframe.printSchema(), we are able to contain 
+the  features  of  the  datasets.  The  features  from  the  user  log  included  artist  name, 
+authentication  method,  user  first  name,  user  gender,  user  last  name,  length  of  the 
+song  that  user  listened,  user  subscription  level  either  paid  or  free,  user  location, 
+service method, service interaction page, user registration timestamp, session id, song 
+name by user, status, timestamp of user service, web browser used and the user id. 
+These features can be categorized as user information, Sparkify service information, 
+user service event and artist information. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+1.3  Method-Data Pre-processing and Cleaning 
+ 
+To  begin  with  the  analysis  and  construct  the  predictive  model,  we  will  import  all 
+necessary  classification  and  evaluation  libraries  from  pyspark.sql  and  pyspark.ml. 
+Then, a Spark session is built.  
+ 
+ 
+Upon importing the libraries, the data is loaded from the HDFS path followed by data 
+cleaning  and  pre-processing.  The  table  below  shows  the  preview  of  Sparkify  user 
+interaction log the from the top five row. 
+
+
+
+
+In data cleaning, we first remove data with null or NA records in userID field as null 
+record  will  affect  the  outcome  of  churn  prediction.  Besides,  we  also  remove  any 
+duplicated userID from the data and we observe that there is 225 distinct user ID in 
+this subset of datasets.  
+ 
+All the timestamp used in the datasets are in milliseconds unit of measure. Therefore, 
+we converted the timestamp to seconds and run the timestamp by strftime() to convert 
+the time to string format of Year-Month-Date, Hour-Minutes-Seconds. 
+ 
+Apart from that, we also pre-process the important features such as user location, the 
+device and browser that user used for streaming Sparkify. 
+ 
+The most critical feature for churn prediction model on streaming platform is the page 
+feature which hold the interaction and event logs of users on Sparkify. Based on the 
+preview code, we can retrieve all event logs from “page” and cancellation confirmation 
+from  the  log  indicating  the  churn  of  user.  From  this  dataset,  we  observed  52 
+cancellation confirmation events. 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+1.4 Method-Exploratory Data Analysis 
+ 
+A function is created for cancellation confirmation to label the churn of user. From the 
+event logs, user that hit on cancellation confirmation will be label as count 1 whereas 
+it will be 0 for active user. To summarize, 23.1% of the user churn from Sparkify while 
+76.9% of users are active user, 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+After  determining  the  user  churn  percentage,  we  want  to  study  and  analysis  the 
+relationship between various features and the churn rate. Firstly, we analyze the user 
+churn from gender view. Based on the results, the churn user consists of 61.5% male 
+and 38.5% female. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+For the device used to stream Sparkify, 46.15% of user churn using Windows, 36.5% 
+using Macintosh, 7.6% using iPhone while 9.6% using X11. As for the browser used 
+for  churn  user,  67.3%  using  Safari,  30.77%  using  Firefox  while  1.9%  using  Gecko. 
+Therefore, we know that the highest number of device and browser used to stream 
+Sparkify for churned users are Windows and Safari respectively. 
+ 
+ 
+By working on the location feature, we observed that highest number of churned users 
+are from California state. 
+ 
+ 
+The free user usually churns as compared to paid user as 56.1% of churned user are 
+user using the free services. 
+ 
+ 
+ 
+ 
+ 
+      
+ 
+ 
+ 
+The user most visited page on the event logs is “next song” event whereby user is 
+streaming the next music whereas the lowest event is “settings” 
+ 
+ 
+The user listened to King of Leon and Coldplay at the highest frequency on Sparkify. 
+ 
+ 
+ 
+1.5 Method-Feature Engineering 
+ 
+Upon completion of data cleaning and exploratory data analysis, we want to extract 
+and analyze the feature which is meaningful for a prediction classification model from 
+the log file. There are 17 features being engineered to determine the possible impact 
+of the features on the training model.
+
+Features Description 
+User ID Unique user ID 
+Gender User gender 
+Label Churn label, 1 = churn, 0 = active 
+Location_state User location 
+Device User device 
+Browser User browser 
+Level User level (free or paid service) 
+Lifetime User’s time spent on Sparkify 
+Session_count Number of user session  
+Unique_song_count Number of different song user listened 
+to 
+Like_song_count Number of songs liked by user 
+Like_song_count_ratio Ratio of liked songs 
+Dislike_song_count Number of songs disliked by user 
+Dislike_song_count_ratio Ratio of disliked songs 
+Collect_song_count Number of songs favorited by user 
+Collect_song_count_ratio Ratio of favorited songs 
+ 
+By converting the data features to Panda data frame, we vectorized the features by 
+using string indexer and one hot encoder converter. One Hot Encoding is the process 
+of transforming categorical variables into numerical format before fitting and training a 
+Machine  Learning  algorithm  while  string  indexer  helps  to  convert  categorical  string 
+columns in a Data Frame into numerical indices. By vectorization of all the features, 
+we are able to fit the variables and analyzed the correlation of these features with the 
+label count. 
+ 
+ 
+A heatmap is produced to plot the correlation among all 17 features.  The closer to 
+value 1.0 (blue) in heatmap indicating the stronger is the correlation between features. 
+However, in order to study and analyze the churn, we mainly focus on the correlation 
+between  all  features  with  the  label  feature  as  the  label  indicating  whether  the  user 
+churn or active. 
+ 
+ 
+We sort out the correlation of all features with label by descending order from positive 
+to negative value. Positive correlation indicating the variables are moving in tandem 
+with  label  feature  in  the  same  direction  whereas  negative  correlation  indicating  the 
+variables is moving in opposite direction. The closer the correlation to either 1 or -1 
+indicating strong correlation whereas the correlation is weak if the value is closer to 0. 
+Therefore, to build the predictive model, we will remove device_index and 
+browser_index from the training as these features are close to 0 indicating their weak 
+correlation with label count which represent user churn. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+After defining the important features that have strong correlation with user churn, we 
+will finalize the features list for model training. VectorAssembler is used to gather the 
+vectorized  variables  follow  by  running  StandardScaler  to  standardize  the  variables 
+value  to  standard  format  since  the  value  for  different  features  could  have  different 
+range. For example, event value could be up to 1000 but ratio value can only be 0 to 
+1. After all the standardization, we create the features pipeline and ready to execute 
+Machine Learning. 
+The dataset is split into two parts whereby 70% of random data is categorized as train 
+data and 30% is categorized as test data. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+1.6 Method- Model Training 
+ 
+By splitting the dataset to train data and test data, we proceeded with model creation 
+and  training.  In  this  coursework,  we  will  apply  four  approaches  to  compare  the 
+accuracy  of  model  and  determine  the  optimum  model  to  predict  user  churn.  Four 
+machine learning approaches are logistic regression, random forest, decision tree and 
+gradient boosted tree (GBT).  
+ 
+ 
+1.7 Method- Model Evaluation 
+ 
+By training the data with different classifier, we want to conclude which model provides 
+best prediction on user churn. Therefore, we evaluated the four models based on their 
+accuracy and f1 score. Accuracy is the percentage of correct predictions for the test 
+data, the value of accuracy is between 0 to 1, the closer the value to 1 indicating the 
+better accuracy. On the other hand, f1 score is a machine learning evaluation metric 
+that measures a model's accuracy. It combines the precision and recall scores of a 
+model.  The  accuracy  metric  computes  how  many  times  a  model  made  a  correct 
+prediction across the entire dataset. F1 score is usually more useful than 
+
+accuracy, especially when there is uneven class distribution. The value of f1 score is 
+between 0 to 1, the closer the value to 1 indicating the better model is working. 
+ 
+Based on the calculation, we observe that random forest model obtains the highest 
+accuracy  and  f1  score  of  0.81  as  compared  to  decision  tree,  GBT  and  logistic 
+regression. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Coursework 2 Component 3: Summary & Conclusion 
+ 
+2. Conclusion 
+ 
+In summary, we able to study the Sparkify dataset on the user churn topic and created 
+functions  for  the  modelling  process.  The  dataset  possesses  sufficient  quality  with 
+predictive features. In this project, we trained four model to find an optimum model to 
+predict  churn  for  future  deployment.  The  model  that  we  trained  included  logistic 
+regression, decision tree, GBT and random forest.  
+ 
+The main challenges and complication we found was that the feature selection of the 
+dataset was not trivial. The choice of the features has limitation in power and memory. 
+Therefore,  we  use  the  subset  of  the  dataset  to  obtain  good  understanding  of  the 
+Sparkify users’ behavior. We able to identify the user churn and transform the raw data 
+into a meaningful binary classification predictive model.  
+ 
+The best model we observed from our work is the random forest model with both the 
+highest  accuracy  and  f1  score  as  compared  to  0.7  accuracy  in  decision  tree,  0.73 
+accuracy in GBT and 0.75 accuracy in logistic regression. Overall, we able to deploy 
+HDFS, PySpark and MLLib to apply machine learning technique on model training for 
+user churn. This approach can also be applied similarly on other dataset to study on 
+user churn on any subscription services.  
+ 
+In  the  future,  to  improve  the  model,  we  may  need  more  data  on  user  behavior  to 
+understand the reason of user churn. We may include a study on sentiment analysis 
+to study the impact of emotional aspect on the churn of user as the user may churn 
+due  to  many  reasons  for  example,  they  do  not  find  any  songs  that  they  like  or  the 
+Spakify platform is not user friendly instead of just making a conclusion that the user 
+churn due to subscription fee and hence provide more discount on the fee. 
+ 
+ 
+3. Total number of words 
+ 
+Word counts excluding cover page, codes, figure, and references: 1965 words 
+4. References 
+ 
+1. Ahmad, A. K. (2019). Customer churn prediction in telecom using machine 
+learning in big data platform. Retrieved from 
+https://journalofbigdata.springeropen.com/articles/10.1186/s40537-019-0191-
+6 
+2. Almuqren, L. (2021). An Empirical Study on Customer Churn Behaviours 
+Prediction Using Arabic Twitter Mining Approach. Retrieved from 
+https://www.mdpi.com/1999-5903/13/7/175 
+3. Cochet, C. (2021). Predicting customer churn for a popular music streaming 
+service. Retrieved from https://github.com/ChristopherCochet/sparkify-
+customer-churn-prediction 
+4. Forhad, N. (2014). Churn analysis: Predicting churners. Retrieved from 
+https://www.researchgate.net/publication/295257947_Churn_analysis_Predict
+ing_churners 
+5. Prabadevi, B. (2023). Customer churning analysis using machine learning 
+algorithms. Retrieved from 
+https://www.sciencedirect.com/science/article/pii/S2666603023000143 
+6. Tozatto, T. (2022). Churn Prediction for Music Streaming App — Sparkify. 
+Retrieved from https://blog.devgenius.io/churn-prediction-for-music-streaming-
+app-sparkify-d6e26d1ac80f
