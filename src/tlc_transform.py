@@ -43,7 +43,7 @@ CANONICAL_COLS = [
     "valid_locations",
 ]
 
-_MAX_DURATION_SEC = 4 * 3600   # 4 hours
+MAX_DURATION_SEC = 4 * 3600   # 4 hours
 
 
 def _coerce_col(df: DataFrame, col_in: str, col_out: str, dtype) -> DataFrame:
@@ -77,7 +77,7 @@ def _add_quality_flags(df: DataFrame) -> DataFrame:
         F.col("pickup_datetime").isNotNull()
         & F.col("trip_duration_sec").isNotNull()
         & (F.col("trip_duration_sec") > 0)
-        & (F.col("trip_duration_sec") <= _MAX_DURATION_SEC),
+        & (F.col("trip_duration_sec") <= MAX_DURATION_SEC),
     )
     df = df.withColumn(
         "valid_locations",

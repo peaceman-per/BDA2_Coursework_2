@@ -115,7 +115,7 @@ def build_pipeline() -> Pipeline:
     return Pipeline(stages=[assembler, gbt])
 
 
-def build_param_grid(pipeline: Pipeline):
+def build_param_grid(pipeline: Pipeline) -> list:
     """Modest cross-validation grid for GBTRegressor."""
     gbt = pipeline.getStages()[-1]
     return (

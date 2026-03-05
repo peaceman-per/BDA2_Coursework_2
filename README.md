@@ -188,6 +188,9 @@ This writes `evidence/ls-l.txt` with a timestamped recursive directory listing. 
 | §5 | Gold Mart: Monthly Service Summary | H2 |
 | §6 | Gold Mart: Zone-Hour Reliability | H3 |
 | §7 | EDA & Visualisation | H1–H3 |
-| §8 | ML Dataset & Feature Engineering | H4 |
-| §9 | ML Pipeline & Evaluation | H4 |
-| §10 | PostgreSQL Export & Final Summary | – |
+| §8 | Performance Benchmarking | – |
+| §9 | ML Dataset & Feature Engineering | H4 |
+| §10 | ML Pipeline & Evaluation | H4 |
+| §11 | PostgreSQL Export | – |
+| §12 | Subset Mode Demonstration | – |
+| §13 | Final Summary | – |
