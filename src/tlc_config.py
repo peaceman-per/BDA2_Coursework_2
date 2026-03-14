@@ -20,25 +20,25 @@ GOLD_PERF_TIMINGS         = f"{HDFS_PROJECT_ROOT}/gold/perf_timings"
 
 # ── Dataset parameters ───────────────────────────────────────────────────────
 SERVICE_TYPES = ["yellow", "green", "fhv"]
-START_YM      = "2018-01"
+START_YM      = "2022-01"
 END_YM        = "2025-11"
 
 # ── Run toggles ──────────────────────────────────────────────────────────────
-USE_SUBSET    = True          # Set False for full-data run
-SUBSET_MODE   = "one_month"   # "one_month" | "sample_fraction"
-SUBSET_MONTH  = "2019-06"     # month used for subset (small-enough month)
-SUBSET_SERVICE= "yellow"      # service used for one_month subset
+USE_SUBSET    = False         # Set True for subset run, False for full run
+SUBSET_MODE   = "one_month"   # "one_month" or "sample_fraction"
+SUBSET_MONTH  = "2019-10"     # month used for subset (small-enough month)
+SUBSET_SERVICE= "green"      # service used for one_month subset
 
 # ── ML parameters ────────────────────────────────────────────────────────────
-SEED       = 42
+SEED        = 128             # random seed for computation
 TOP_ZONES_N = 50              # restrict to top N zones for ML training
 
 # ML time-based split
 TRAIN_END_YM = "2024-12"
 TEST_START_YM= "2025-01"
 
-# ── Reliability threshold (minutes → seconds) ────────────────────────────────
-LONG_TRIP_THRESHOLD_SEC = 45 * 60   # 45 minutes
+# ── Reliability threshold (minutes -> seconds) ───────────────────────────────
+LONG_TRIP_THRESHOLD_SEC = 45 * 60   # 45 mins
 
 # ── Spark tuning ─────────────────────────────────────────────────────────────
 SHUFFLE_PARTITIONS = 400

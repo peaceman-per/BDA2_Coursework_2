@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-make_subset.py – Write a <=10 MB subset of NYC TLC data to HDFS.
+make_subset.py - Write a <=10 MB subset of NYC TLC data to HDFS.
 
 Usage (from Lena JupyterHub terminal):
-    python scripts/make_subset.py [--month 2019-06] [--service yellow] [--zones N]
-
+    spark-submit scripts/make_subset.py --month 2019-10 --service green --zones N
+ 
 The subset is written to:
     hdfs://lena/user/wsidn001/bda2/coursework-2/out/nyc_tlc/subset/trips/
 """
@@ -13,7 +13,7 @@ import argparse
 import sys
 import os
 
-# Allow importing src modules without installation
+# allow importing src modules without installation
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pyspark.sql import SparkSession
@@ -51,7 +51,7 @@ def make_subset(month: str, service: str, max_zones: int = 30):
 
     df_std = standardize(df, service)
 
-    # Restrict to top max_zones pickup zones to keep file small
+    # restrict to top max_zones pickup zones to keep file small
     top_zones = (
         df_std.groupBy("pu_location_id")
               .count()

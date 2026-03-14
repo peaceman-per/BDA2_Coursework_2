@@ -1,23 +1,23 @@
-# NYC TLC Big Data Analysis – Coursework 2 (DSM010)
+# NYC TLC Big Data Analysis - Coursework 2 (DSM010)
 
-> **Module**: DSM010 Big Data Analytics 2  
-> **Cluster**: Lena (University YARN / HDFS cluster)  
-> **Stack**: HDFS · Apache Spark (PySpark) · Spark MLlib · PostgreSQL (JDBC)
+**Module**: DSM010 Big Data Analytics 2  
+**Cluster**: Lena  
+**Stack**: HDFS - Apache Spark (PySpark) - Spark MLlib - PostgreSQL (JDBC)
 
 ---
 
 ## Project Overview
 
-This project analyses **NYC Taxi and Limousine Commission (TLC) trip records** from January 2018 to November 2025 across three service types: Yellow taxi, Green taxi, and For-Hire Vehicles (FHV).
+This project analyses **NYC Taxi and Limousine Commission (TLC) trip records** from January 2018 to November 2025 across three services: Yellow taxis, Green taxis and For-Hire Vehicles (FHV).
 
 ### Research Hypotheses
 
 | # | Hypothesis | Gold mart used |
 |---|-----------|---------------|
-| **H1** | Yellow taxi demand follows a strong hour-of-day and day-of-week cycle; peak demand zones are concentrated in Manhattan. | `gold/zone_hour_demand` |
-| **H2** | Monthly trip volumes for all three service types declined sharply during 2020 (COVID-19) and have not fully recovered to 2019 levels by 2025. | `gold/monthly_service_summary` |
-| **H3** | Trips originating from airport zones (JFK, LGA, EWR) have a significantly higher share of long-duration trips (>45 min) compared to central Manhattan zones. | `gold/zone_hour_reliability` |
-| **H4** | A GBT model trained on lag and calendar features can forecast next-hour pickup demand with lower RMSE than a seasonal-naïve baseline (lag-24). | `gold/model_metrics` |
+| **H1** | Yellow taxi demand follows a strong hourly and weekday cycle; peak demand is concentrated in Manhattan. | `gold/zone_hour_demand` |
+| **H2** | Monthly trip volumes across all three services show a sustained post-pandemic recovery trend from 2022 to 2025, but yellow taxi volumes remain below pre-COVID peak levels. | `gold/monthly_service_summary` |
+| **H3** | Trips originating from airports (JFK, LGA, EWR) have a significantly higher share of long-duration trips (>45 min) compared to central zones. | `gold/zone_hour_reliability` |
+| **H4** | A GBT model trained on lag and calendar features can forecast next-hour pickup demand with lower RMSE than a seasonal-naive baseline (lag-24). | `gold/model_metrics` |
 
 ---
 
@@ -26,10 +26,10 @@ This project analyses **NYC Taxi and Limousine Commission (TLC) trip records** f
 | Property | Value |
 |----------|-------|
 | Source | NYC TLC Trip Record Data (public domain) |
-| Period | 2018-01 – 2025-11 |
+| Period | 2022-01 - 2025-11 |
 | Services | Yellow taxi, Green taxi, FHV |
 | Format | Monthly Parquet files on HDFS |
-| Approx. size | ~150 GB uncompressed |
+| Size | ~10 GB uncompressed |
 
 ### HDFS Layout
 
@@ -37,9 +37,9 @@ This project analyses **NYC Taxi and Limousine Commission (TLC) trip records** f
 hdfs://lena/user/wsidn001/bda2/coursework-2/
 ├── dat/
 │   └── {YYYY}/
-│       ├── yellow_tripdata_{YYYY}_{MM}.parquet
-│       ├── green_tripdata_{YYYY}_{MM}.parquet
-│       └── fhv_tripdata_{YYYY}_{MM}.parquet
+│       ├── yellow_tripdata_{YYYY}-{MM}.parquet
+│       ├── green_tripdata_{YYYY}-{MM}.parquet
+│       └── fhv_tripdata_{YYYY}-{MM}.parquet
 └── out/nyc_tlc/
     ├── silver/trips/           ← cleaned, unified schema
     ├── subset/trips/           ← ≤10 MB sample for marker
@@ -55,25 +55,25 @@ hdfs://lena/user/wsidn001/bda2/coursework-2/
 
 ---
 
-## Repository Structure
+## Directory Structure
 
 ```
 BDA2_Coursework_2/
 ├── README.md
 ├── notebooks/
-│   └── cw2_nyc_tlc.ipynb       ← Main analysis notebook (run on Lena)
+│   └── cw2_nyc_tlc.ipynb       - Main analysis notebook (run on Lena)
 ├── src/
-│   ├── tlc_config.py           ← Centralised config (paths, constants)
-│   ├── tlc_io.py               ← HDFS data loading helpers
-│   ├── tlc_transform.py        ← Schema harmonisation (Bronze → Silver)
-│   ├── tlc_analytics.py        ← Gold mart aggregation functions
-│   ├── tlc_ml.py               ← Spark MLlib GBT pipeline
-│   └── pg_export.py            ← PostgreSQL JDBC export
+│   ├── tlc_config.py           - Centralised config (paths, constants)
+│   ├── tlc_io.py               - HDFS data loading helpers
+│   ├── tlc_transform.py        - Schema harmonisation (Bronze → Silver)
+│   ├── tlc_analytics.py        - Gold mart aggregation functions
+│   ├── tlc_ml.py               - Spark MLlib GBT pipeline
+│   └── pg_export.py            - PostgreSQL JDBC export
 ├── scripts/
-│   ├── make_subset.py          ← Create ≤10 MB HDFS subset
+│   ├── make_subset.py          - Create =<10 MB HDFS subset
 │   └── capture_submission_evidence.sh
 └── evidence/
-    └── .gitkeep                ← evidence/ls-l.txt written here at submission
+    └── .gitkeep                - evidence/ls-l.txt written here at submission
 ```
 
 ---
@@ -105,7 +105,7 @@ To **create** (or recreate) the subset:
 
 ```bash
 # From JupyterHub terminal – writes subset to HDFS
-python scripts/make_subset.py --month 2019-06 --service yellow --zones 30
+spark-submit scripts/make_subset.py --month 2019-10 --service green --zones 30
 ```
 
 ### 4. Full-data run

@@ -1,5 +1,5 @@
 """
-tlc_analytics.py – Gold mart creation functions for NYC TLC Coursework 2.
+tlc_analytics.py - Gold mart creation functions for NYC TLC Coursework 2.
 
 Functions return Spark DataFrames.  Callers are responsible for saving.
 """
@@ -11,7 +11,7 @@ from pyspark.sql.window import Window
 from tlc_config import LONG_TRIP_THRESHOLD_SEC
 
 
-# ── GOLD 1: Zone-hour demand ─────────────────────────────────────────────────
+############# GOLD 1: Zone-hour demand #############
 
 def build_zone_hour_demand(df_silver: DataFrame) -> DataFrame:
     """
@@ -39,7 +39,7 @@ def build_zone_hour_demand(df_silver: DataFrame) -> DataFrame:
     )
 
 
-# ── GOLD 2: Monthly service summary ─────────────────────────────────────────
+############# GOLD 2: Monthly service summary #############
 
 def build_monthly_service_summary(df_silver: DataFrame) -> DataFrame:
     """
@@ -62,7 +62,7 @@ def build_monthly_service_summary(df_silver: DataFrame) -> DataFrame:
     )
 
 
-# ── GOLD 3: Zone-hour reliability ─────────────────────────────────────────────
+############# GOLD 3: Zone-hour reliability #############
 
 def build_zone_hour_reliability(df_silver: DataFrame) -> DataFrame:
     """
@@ -84,11 +84,11 @@ def build_zone_hour_reliability(df_silver: DataFrame) -> DataFrame:
     )
 
 
-# ── Performance benchmarking helper ─────────────────────────────────────────
+############# Performance benchmarking helper #############
 
 def benchmark_aggregation(spark, df_silver: DataFrame, label: str = "zone_hour_demand"):
     """
-    Run build_zone_hour_demand twice – once without and once with caching –
+    Run build_zone_hour_demand twice - once without and once with caching -
     and return a tiny metrics DataFrame with timings.
     """
     import time
@@ -96,13 +96,13 @@ def benchmark_aggregation(spark, df_silver: DataFrame, label: str = "zone_hour_d
 
     rows = []
 
-    # Without caching
+    # without caching
     t0 = time.time()
     build_zone_hour_demand(df_silver).count()
     t1 = time.time()
     rows.append(Row(experiment=f"{label}_no_cache", elapsed_sec=round(t1 - t0, 2)))
 
-    # With caching
+    # with caching
     df_cached = df_silver.cache()
     df_cached.count()  # materialise cache
     t2 = time.time()

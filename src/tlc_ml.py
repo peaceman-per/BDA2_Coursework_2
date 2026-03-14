@@ -1,5 +1,5 @@
 """
-tlc_ml.py – Spark MLlib pipeline (GBTRegressor) for next-hour pickup forecasting.
+tlc_ml.py - Spark MLlib pipeline (GBTRegressor) for next-hour pickup forecasting.
 """
 
 from pyspark.sql import DataFrame, SparkSession
@@ -14,13 +14,13 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from tlc_config import SEED, TOP_ZONES_N, TRAIN_END_YM, TEST_START_YM
 
 
-# ── Feature engineering ──────────────────────────────────────────────────────
+############# Feature engineering #############
 
 def build_features(df_zone_hour: DataFrame, top_zones_n: int = TOP_ZONES_N) -> DataFrame:
     """
     Build lag/rolling features for next-hour pickup forecasting.
 
-    Input:  zone_hour_demand mart (service_type, zone_id, ts_hour, pickups, …)
+    Input:  zone_hour_demand mart (service_type, zone_id, ts_hour, pickups, ...)
     Output: model DataFrame with label (next_hour_pickups) + feature columns.
     """
     # Restrict to top N zones by total pickups for tractable training
@@ -34,7 +34,7 @@ def build_features(df_zone_hour: DataFrame, top_zones_n: int = TOP_ZONES_N) -> D
     )
     df = df_zone_hour.join(top_zones, on="zone_id", how="inner")
 
-    # Window per zone ordered by ts_hour
+    # window per zone ordered by ts_hour
     w = Window.partitionBy("zone_id").orderBy("ts_hour")
 
     df = (
@@ -43,12 +43,12 @@ def build_features(df_zone_hour: DataFrame, top_zones_n: int = TOP_ZONES_N) -> D
         .withColumn("lag_1",   F.lag("pickups",  1).over(w))
         .withColumn("lag_24",  F.lag("pickups", 24).over(w))
         .withColumn("lag_168", F.lag("pickups",168).over(w))
-        # Rolling means via rangeFromSpec (rows-based approximation)
+        # rolling means via rangeFromSpec (rows-based approximation)
         .withColumn("rolling_mean_24",
                     F.avg("pickups").over(w.rowsBetween(-24, -1)))
         .withColumn("rolling_mean_168",
                     F.avg("pickups").over(w.rowsBetween(-168, -1)))
-        # Calendar features
+        # calendar features
         .withColumn("hour_of_day", F.hour("ts_hour"))
         .withColumn("day_of_week", F.dayofweek("ts_hour"))
         .withColumn("month_num",   F.month("ts_hour"))
@@ -56,12 +56,12 @@ def build_features(df_zone_hour: DataFrame, top_zones_n: int = TOP_ZONES_N) -> D
         .withColumn("label", F.lead("pickups", 1).over(w))
     )
 
-    # Drop rows with any null in key feature columns
+    # drop rows with any null in key feature columns
     feature_cols = ["lag_1","lag_24","lag_168","rolling_mean_24","rolling_mean_168",
                     "hour_of_day","day_of_week","month_num","label"]
     df = df.dropna(subset=feature_cols)
 
-    # Add year/month for time-based split
+    # add year/month for time-based split
     df = (
         df
         .withColumn("feat_year",  F.year("ts_hour"))
@@ -70,7 +70,7 @@ def build_features(df_zone_hour: DataFrame, top_zones_n: int = TOP_ZONES_N) -> D
     return df
 
 
-# ── Time-based train/test split ──────────────────────────────────────────────
+############# Time-based train/test split #############
 
 def time_split(df: DataFrame, train_end: str = TRAIN_END_YM, test_start: str = TEST_START_YM):
     """
@@ -91,7 +91,7 @@ def time_split(df: DataFrame, train_end: str = TRAIN_END_YM, test_start: str = T
     return train, test
 
 
-# ── Spark ML pipeline ────────────────────────────────────────────────────────
+############# Spark ML pipeline #############
 
 NUMERIC_FEATURES = [
     "lag_1","lag_24","lag_168",
@@ -103,7 +103,7 @@ NUMERIC_FEATURES = [
 def build_pipeline() -> Pipeline:
     """
     Build Spark ML Pipeline:
-      VectorAssembler → GBTRegressor
+      VectorAssembler -> GBTRegressor
     (zone_id encoding omitted for simplicity; zone selection provides implicit grouping)
     """
     assembler = VectorAssembler(inputCols=NUMERIC_FEATURES, outputCol="features")
@@ -143,25 +143,33 @@ def train_with_cv(train_df: DataFrame) -> object:
     return cv.fit(train_df)
 
 
-# ── Baseline evaluation ──────────────────────────────────────────────────────
+############# Baseline evaluation #############
 
 def evaluate_baseline(test_df: DataFrame):
     """
     Seasonal-naive baseline: predict y_hat = lag_24.
     Returns (mae, rmse).
     """
-    evaluator_mae  = RegressionEvaluator(labelCol="label", predictionCol="lag_24", metricName="mae")
-    evaluator_rmse = RegressionEvaluator(labelCol="label", predictionCol="lag_24", metricName="rmse")
+    evaluator_mae  = RegressionEvaluator(labelCol="label",
+                                         predictionCol="lag_24",
+                                         metricName="mae")
+    evaluator_rmse = RegressionEvaluator(labelCol="label",
+                                         predictionCol="lag_24",
+                                         metricName="rmse")
     # lag_24 must be cast to double for the evaluator
     df = test_df.withColumn("lag_24", F.col("lag_24").cast("double"))
     return evaluator_mae.evaluate(df), evaluator_rmse.evaluate(df)
 
 
-# ── Model evaluation ─────────────────────────────────────────────────────────
+############# Model evaluation #############
 
 def evaluate_model(model, test_df: DataFrame):
     """Return (mae, rmse) for the fitted model on test_df."""
     preds = model.transform(test_df)
-    evaluator_mae  = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="mae")
-    evaluator_rmse = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="rmse")
+    evaluator_mae  = RegressionEvaluator(labelCol="label",
+                                         predictionCol="prediction",
+                                         metricName="mae")
+    evaluator_rmse = RegressionEvaluator(labelCol="label",
+                                         predictionCol="prediction",
+                                         metricName="rmse")
     return evaluator_mae.evaluate(preds), evaluator_rmse.evaluate(preds), preds

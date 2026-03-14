@@ -19,8 +19,7 @@ from tlc_config import (
     SUBSET_SERVICE,
 )
 
-
-# ── Month iterator ───────────────────────────────────────────────────────────
+############# Month iterator #############
 
 def month_range(start_ym: str, end_ym: str):
     """Yield (year, month) int tuples from start_ym to end_ym inclusive."""
@@ -35,9 +34,13 @@ def month_range(start_ym: str, end_ym: str):
             y += 1
 
 
-# ── Robust file loader ───────────────────────────────────────────────────────
+############# Robust file loader #############
+# def _try_read(spark: SparkSession, path: str) -> DataFrame | None:
+# too new!
+# for older versions of python
+from typing import Optional
 
-def _try_read(spark: SparkSession, path: str) -> DataFrame | None:
+def _try_read(spark: SparkSession, path: str) -> Optional[DataFrame]:
     """Attempt to read a parquet path; return None if it does not exist."""
     try:
         df = spark.read.parquet(path)
@@ -47,42 +50,49 @@ def _try_read(spark: SparkSession, path: str) -> DataFrame | None:
     except Exception:
         return None
 
+    
+from pyspark.sql.functions import lit
 
+# function to get union of column set and apply it to dfs
+def align_columns(df1,df2):
+    for col in df1.columns:
+        if col not in df2.columns:
+            df2 = df2.withColumn(col, lit(None))
+    for col in df2.columns:
+        if col not in df1.columns:
+            df1 = df1.withColumn(col, lit(None))
+    return df1.select(sorted(df1.columns)), df2.select(sorted(df1.columns))
+
+# funct to load files inot a single df
 def load_service_raw(
     spark: SparkSession,
     service: str,
     start_ym: str = START_YM,
     end_ym: str = END_YM,
-) -> DataFrame | None:
+) -> Optional[DataFrame]:
     """
     Load all monthly parquet files for one service_type and return a unioned
     DataFrame with service_type, year, and month columns added.
 
-    Tries two path patterns:
-      (a) {HDFS_INPUT_ROOT}/{YYYY}/{service}_tripdata_{YYYY}_{MM}.parquet
-      (b) {HDFS_INPUT_ROOT}/{YYYY}/{service}/{service}_tripdata_{YYYY}_{MM}.parquet
+    Assumes input pattern:
+      {HDFS_INPUT_ROOT}/{YYYY}/{service}_tripdata_{YYYY}-{MM}.parquet
     """
     dfs = []
     missing = []
 
     for y, m in month_range(start_ym, end_ym):
-        fname = f"{service}_tripdata_{y:04d}_{m:02d}.parquet"
-        paths = [
-            f"{HDFS_INPUT_ROOT}/{y:04d}/{fname}",
-            f"{HDFS_INPUT_ROOT}/{y:04d}/{service}/{fname}",
-        ]
+        fname = f"{service}_tripdata_{y:04d}-{m:02d}.parquet"
+        p = f"{HDFS_INPUT_ROOT}/{y:04d}/{fname}"
         loaded = False
-        for p in paths:
-            df = _try_read(spark, p)
-            if df is not None:
-                df = (
-                    df.withColumn("service_type", F.lit(service))
-                      .withColumn("src_year",  F.lit(y).cast("int"))
-                      .withColumn("src_month", F.lit(m).cast("int"))
-                )
-                dfs.append(df)
-                loaded = True
-                break
+        df = _try_read(spark, p)
+        if df is not None:
+            df = (
+                df.withColumn("service_type", F.lit(service))
+                  .withColumn("src_year",  F.lit(y).cast("int"))
+                  .withColumn("src_month", F.lit(m).cast("int"))
+            )
+            dfs.append(df)
+            loaded = True
         if not loaded:
             missing.append(f"{y:04d}-{m:02d}")
 
@@ -96,16 +106,20 @@ def load_service_raw(
     print(f"[{service}] Loaded {len(dfs)} file(s).")
     result = dfs[0]
     for d in dfs[1:]:
-        result = result.unionByName(d, allowMissingColumns=True)
+        result, d = align_columns(result, d)
+        result = result.unionByName(d)
     return result
 
+# old python fix again
+from typing import List
+from typing import Dict
 
 def load_all_raw(
     spark: SparkSession,
-    services: list[str] = SERVICE_TYPES,
+    services: List[str] = SERVICE_TYPES,
     start_ym: str = START_YM,
     end_ym: str = END_YM,
-) -> dict[str, DataFrame]:
+) -> Dict[str, DataFrame]:
     """Return a dict {service_type: raw_df} for each service."""
     raw = {}
     for svc in services:
@@ -115,19 +129,19 @@ def load_all_raw(
     return raw
 
 
-# ── Subset loader ─────────────────────────────────────────────────────────────
+############# Subset loader #############
 
 def load_subset(spark: SparkSession) -> DataFrame:
     """Read the pre-written subset parquet from HDFS."""
     return spark.read.parquet(SUBSET_PATH)
 
 
-# ── Save helper ───────────────────────────────────────────────────────────────
+############# Save helper #############
 
-def save_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = None, mode: str = "overwrite"):
+def save_parquet(df: DataFrame, path: str, partition_cols: Optional[List[str]] = None, mode: str = "overwrite"):
     """Write a DataFrame to HDFS parquet with optional partitioning."""
     w = df.write.mode(mode)
     if partition_cols:
         w = w.partitionBy(*partition_cols)
     w.parquet(path)
-    print(f"Saved → {path}")
+    print(f"Saved -> {path}")

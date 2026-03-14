@@ -9,6 +9,7 @@ can be unioned into a single Silver DataFrame.
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.types import IntegerType, DoubleType, TimestampType
+from typing import Optional
 
 # ── Canonical column list ────────────────────────────────────────────────────
 #
@@ -46,9 +47,19 @@ CANONICAL_COLS = [
 MAX_DURATION_SEC = 4 * 3600   # 4 hours
 
 
-def _coerce_col(df: DataFrame, col_in: str, col_out: str, dtype) -> DataFrame:
+def _find_col(df: DataFrame, *candidates: str):
+    """Return the first column name that exists (case-insensitive), or None."""
+    col_map = {c.lower(): c for c in df.columns}
+    for cand in candidates:
+        actual = col_map.get(cand.lower())
+        if actual is not None:
+            return actual
+    return None
+
+
+def _coerce_col(df: DataFrame, col_in: Optional[str], col_out: str, dtype) -> DataFrame:
     """Rename + cast a column; produce a null column if col_in is absent."""
-    if col_in in df.columns:
+    if col_in is not None and col_in in df.columns:
         return df.withColumn(col_out, F.col(col_in).cast(dtype))
     return df.withColumn(col_out, F.lit(None).cast(dtype))
 
@@ -91,16 +102,21 @@ def _add_quality_flags(df: DataFrame) -> DataFrame:
 def standardize_yellow(df: DataFrame) -> DataFrame:
     """Map Yellow taxi raw columns to canonical schema."""
     # Column names changed across years; handle both versions
-    pu_col  = "tpep_pickup_datetime"  if "tpep_pickup_datetime"  in df.columns else "pickup_datetime"
-    do_col  = "tpep_dropoff_datetime" if "tpep_dropoff_datetime" in df.columns else "dropoff_datetime"
-    pu_loc  = "PULocationID"           if "PULocationID"           in df.columns else "pu_location_id"
-    do_loc  = "DOLocationID"           if "DOLocationID"           in df.columns else "do_location_id"
+    pu_col = _find_col(df, "tpep_pickup_datetime", "pickup_datetime")
+    do_col = _find_col(df, "tpep_dropoff_datetime", "dropoff_datetime")
+    pu_loc = _find_col(df, "PULocationID", "pu_location_id")
+    do_loc = _find_col(df, "DOLocationID", "do_location_id")
 
-    df = (
-        df
-        .withColumn("pickup_datetime",  F.col(pu_col).cast(TimestampType()))
-        .withColumn("dropoff_datetime", F.col(do_col).cast(TimestampType()))
-    )
+    if pu_col is not None:
+        df = df.withColumn("pickup_datetime", F.col(pu_col).cast(TimestampType()))
+    else:
+        df = df.withColumn("pickup_datetime", F.lit(None).cast(TimestampType()))
+
+    if do_col is not None:
+        df = df.withColumn("dropoff_datetime", F.col(do_col).cast(TimestampType()))
+    else:
+        df = df.withColumn("dropoff_datetime", F.lit(None).cast(TimestampType()))
+
     df = _coerce_col(df, pu_loc,           "pu_location_id",  IntegerType())
     df = _coerce_col(df, do_loc,           "do_location_id",  IntegerType())
     df = _coerce_col(df, "passenger_count","passenger_count", IntegerType())
@@ -116,16 +132,21 @@ def standardize_yellow(df: DataFrame) -> DataFrame:
 
 def standardize_green(df: DataFrame) -> DataFrame:
     """Map Green taxi raw columns to canonical schema."""
-    pu_col  = "lpep_pickup_datetime"  if "lpep_pickup_datetime"  in df.columns else "pickup_datetime"
-    do_col  = "lpep_dropoff_datetime" if "lpep_dropoff_datetime" in df.columns else "dropoff_datetime"
-    pu_loc  = "PULocationID"           if "PULocationID"           in df.columns else "pu_location_id"
-    do_loc  = "DOLocationID"           if "DOLocationID"           in df.columns else "do_location_id"
+    pu_col = _find_col(df, "lpep_pickup_datetime", "pickup_datetime")
+    do_col = _find_col(df, "lpep_dropoff_datetime", "dropoff_datetime")
+    pu_loc = _find_col(df, "PULocationID", "pu_location_id")
+    do_loc = _find_col(df, "DOLocationID", "do_location_id")
 
-    df = (
-        df
-        .withColumn("pickup_datetime",  F.col(pu_col).cast(TimestampType()))
-        .withColumn("dropoff_datetime", F.col(do_col).cast(TimestampType()))
-    )
+    if pu_col is not None:
+        df = df.withColumn("pickup_datetime", F.col(pu_col).cast(TimestampType()))
+    else:
+        df = df.withColumn("pickup_datetime", F.lit(None).cast(TimestampType()))
+
+    if do_col is not None:
+        df = df.withColumn("dropoff_datetime", F.col(do_col).cast(TimestampType()))
+    else:
+        df = df.withColumn("dropoff_datetime", F.lit(None).cast(TimestampType()))
+
     df = _coerce_col(df, pu_loc,           "pu_location_id",  IntegerType())
     df = _coerce_col(df, do_loc,           "do_location_id",  IntegerType())
     df = _coerce_col(df, "passenger_count","passenger_count", IntegerType())
@@ -145,20 +166,23 @@ def standardize_fhv(df: DataFrame) -> DataFrame:
     FHV files may lack passenger_count, trip_distance, fare_amount,
     total_amount.  These are set to null.
     """
-    pu_col  = "pickup_datetime"        if "pickup_datetime"        in df.columns else "Pickup_DateTime"
-    do_col  = "dropoff_datetime"       if "dropoff_datetime"       in df.columns else "DropOff_DateTime"
-    pu_loc  = "PUlocationID"           if "PUlocationID"           in df.columns else (
-               "PULocationID"          if "PULocationID"           in df.columns else "pu_location_id")
-    do_loc  = "DOlocationID"           if "DOlocationID"           in df.columns else (
-               "DOLocationID"          if "DOLocationID"           in df.columns else "do_location_id")
+    pu_col = _find_col(df, "pickup_datetime", "Pickup_DateTime", "Pickup_datetime")
+    do_col = _find_col(df, "dropoff_datetime", "DropOff_DateTime", "Dropoff_datetime", "dropOff_datetime")
+    pu_loc = _find_col(df, "PUlocationID", "PULocationID", "pulocationid", "pu_location_id")
+    do_loc = _find_col(df, "DOlocationID", "DOLocationID", "dolocationid", "do_location_id")
 
-    df = (
-        df
-        .withColumn("pickup_datetime",  F.col(pu_col).cast(TimestampType()))
-        .withColumn("dropoff_datetime", F.col(do_col).cast(TimestampType()))
-    )
-    df = _coerce_col(df, pu_loc,  "pu_location_id", IntegerType())
-    df = _coerce_col(df, do_loc,  "do_location_id", IntegerType())
+    if pu_col is not None:
+        df = df.withColumn("pickup_datetime", F.col(pu_col).cast(TimestampType()))
+    else:
+        df = df.withColumn("pickup_datetime", F.lit(None).cast(TimestampType()))
+
+    if do_col is not None:
+        df = df.withColumn("dropoff_datetime", F.col(do_col).cast(TimestampType()))
+    else:
+        df = df.withColumn("dropoff_datetime", F.lit(None).cast(TimestampType()))
+
+    df = _coerce_col(df, pu_loc, "pu_location_id", IntegerType())
+    df = _coerce_col(df, do_loc, "do_location_id", IntegerType())
     # FHV typically lacks these; fill with null
     for col_name, dtype in [("passenger_count", IntegerType()),
                              ("trip_distance",   DoubleType()),
