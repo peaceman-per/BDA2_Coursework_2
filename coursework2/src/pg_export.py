@@ -8,10 +8,11 @@ If any variable is missing the export is silently skipped.
 """
 
 import os
+from typing import Optional, Dict
 from pyspark.sql import DataFrame, SparkSession
 
 
-def _pg_url() -> str | None:
+def _pg_url() -> Optional[str]:
     """Build JDBC URL from environment; return None if any var is unset."""
     host = os.environ.get("PG_HOST")
     port = os.environ.get("PG_PORT", "5432")
@@ -21,7 +22,7 @@ def _pg_url() -> str | None:
     return f"jdbc:postgresql://{host}:{port}/{db}"
 
 
-def _pg_props() -> dict | None:
+def _pg_props() -> Optional[Dict]:
     """Build JDBC properties dict; return None if credentials are unset."""
     user = os.environ.get("PG_USER")
     pwd  = os.environ.get("PG_PASSWORD")
@@ -54,7 +55,7 @@ def export_all(
     df_monthly_summary: DataFrame,
     df_model_metrics: DataFrame,
     df_perf_timings: DataFrame,
-    df_zone_hour_2025: DataFrame | None = None,
+    df_zone_hour_2025: Optional[DataFrame] = None,
 ) -> None:
     """
     Export all curated gold tables to PostgreSQL.
