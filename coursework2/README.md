@@ -15,7 +15,7 @@ This project analyses **NYC Taxi and Limousine Commission (TLC) trip records** f
 | # | Hypothesis | Gold mart used |
 |---|-----------|---------------|
 | **H1** | Yellow taxi demand follows a strong hourly and weekday cycle; peak demand is concentrated in Manhattan. | `gold/zone_hour_demand` |
-| **H2** | Trip volumes for all three services declined sharply during 2020 (COVID-19) and have not fully recovered to 2019 levels by 2025. | `gold/monthly_service_summary` |
+| **H2** | Monthly trip volumes across all three services show a sustained post-pandemic recovery trend from 2022 to 2025, but yellow taxi volumes remain below pre-COVID peak levels. | `gold/monthly_service_summary` |
 | **H3** | Trips originating from airports (JFK, LGA, EWR) have a significantly higher share of long-duration trips (>45 min) compared to central zones. | `gold/zone_hour_reliability` |
 | **H4** | A GBT model trained on lag and calendar features can forecast next-hour pickup demand with lower RMSE than a seasonal-naive baseline (lag-24). | `gold/model_metrics` |
 
@@ -26,7 +26,7 @@ This project analyses **NYC Taxi and Limousine Commission (TLC) trip records** f
 | Property | Value |
 |----------|-------|
 | Source | NYC TLC Trip Record Data (public domain) |
-| Period | 2018-01 – 2025-11 |
+| Period | 2022-01 – 2025-11 |
 | Services | Yellow taxi, Green taxi, FHV |
 | Format | Monthly Parquet files on HDFS |
 | Size | ~10 GB uncompressed |

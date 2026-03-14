@@ -20,7 +20,7 @@ GOLD_PERF_TIMINGS         = f"{HDFS_PROJECT_ROOT}/gold/perf_timings"
 
 # ── Dataset parameters ───────────────────────────────────────────────────────
 SERVICE_TYPES = ["yellow", "green", "fhv"]
-START_YM      = "2018-01"
+START_YM      = "2022-01"
 END_YM        = "2025-11"
 
 # ── Run toggles ──────────────────────────────────────────────────────────────
