@@ -86,29 +86,41 @@ def build_zone_hour_reliability(df_silver: DataFrame) -> DataFrame:
 
 ############# Performance benchmarking helper #############
 
-def benchmark_aggregation(spark, df_silver: DataFrame, label: str = "zone_hour_demand"):
+def benchmark_aggregation(spark, df_zone_hour, label="zone_hour_demand"):
     """
-    Run build_zone_hour_demand twice - once without and once with caching -
-    and return a tiny metrics DataFrame with timings.
+    Benchmark a simple aggregation on df_zone_hour with and without caching.
     """
     import time
     from pyspark.sql import Row
 
+    def _run_agg(df):
+        """A representative aggregation on the zone-hour mart."""
+        return (
+            df.groupBy("service_type", "zone_id")
+              .agg(
+                  F.sum("pickups").alias("total_pickups"),
+                  F.avg("avg_total_amount").alias("mean_amount"),
+              )
+              .count()
+        )
+
     rows = []
 
-    # without caching
+    # run 1: no cache
+    df_zone_hour.unpersist()
     t0 = time.time()
-    build_zone_hour_demand(df_silver).count()
+    _run_agg(df_zone_hour)
     t1 = time.time()
     rows.append(Row(experiment=f"{label}_no_cache", elapsed_sec=round(t1 - t0, 2)))
 
-    # with caching
-    df_cached = df_silver.cache()
-    df_cached.count()  # materialise cache
+    # run 2: with cache
+    df_zone_hour.cache()
+    df_zone_hour.count()  # materialise
     t2 = time.time()
-    build_zone_hour_demand(df_cached).count()
+    _run_agg(df_zone_hour)
     t3 = time.time()
     rows.append(Row(experiment=f"{label}_cached", elapsed_sec=round(t3 - t2, 2)))
-    df_cached.unpersist()
+
+    df_zone_hour.unpersist()
 
     return spark.createDataFrame(rows)

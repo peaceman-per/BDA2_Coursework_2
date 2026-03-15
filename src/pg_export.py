@@ -1,5 +1,5 @@
 """
-pg_export.py – PostgreSQL export via Spark JDBC for NYC TLC Coursework 2.
+pg_export.py - PostgreSQL export via Spark JDBC for NYC TLC Coursework 2.
 
 Reads connection details from environment variables:
   PG_HOST, PG_PORT, PG_DB, PG_USER, PG_PASSWORD

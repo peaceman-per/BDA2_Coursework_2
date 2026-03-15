@@ -26,7 +26,7 @@ END_YM        = "2025-11"
 # ── Run toggles ──────────────────────────────────────────────────────────────
 USE_SUBSET    = False         # Set True for subset run, False for full run
 SUBSET_MODE   = "one_month"   # "one_month" or "sample_fraction"
-SUBSET_MONTH  = "2019-10"     # month used for subset (small-enough month)
+SUBSET_MONTH  = "2022-06"     # month used for subset (small-enough month)
 SUBSET_SERVICE= "green"      # service used for one_month subset
 
 # ── ML parameters ────────────────────────────────────────────────────────────
