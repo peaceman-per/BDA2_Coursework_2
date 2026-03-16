@@ -31,8 +31,8 @@ def build_features(df_zone_hour, top_zones_n=TOP_ZONES_N):
 
     df = (
         df
-        .withColumn("lag_1",   F.lag("pickups",  1).over(w))
-        .withColumn("lag_24",  F.lag("pickups", 24).over(w))
+        .withColumn("lag_1", F.lag("pickups",  1).over(w))
+        .withColumn("lag_24", F.lag("pickups", 24).over(w))
         .withColumn("lag_168", F.lag("pickups",168).over(w))
         .withColumn("rolling_mean_24",
                     F.avg("pickups").over(w.rowsBetween(-24, -1)))
@@ -40,7 +40,7 @@ def build_features(df_zone_hour, top_zones_n=TOP_ZONES_N):
                     F.avg("pickups").over(w.rowsBetween(-168, -1)))
         .withColumn("hour_of_day", F.hour("ts_hour"))
         .withColumn("day_of_week", F.dayofweek("ts_hour"))
-        .withColumn("month_num",   F.month("ts_hour"))
+        .withColumn("month_num", F.month("ts_hour"))
         .withColumn("label", F.lead("pickups", 1).over(w))
     )
 
@@ -50,7 +50,7 @@ def build_features(df_zone_hour, top_zones_n=TOP_ZONES_N):
 
     df = (
         df
-        .withColumn("feat_year",  F.year("ts_hour"))
+        .withColumn("feat_year", F.year("ts_hour"))
         .withColumn("feat_month", F.month("ts_hour"))
     )
     return df
@@ -104,9 +104,9 @@ def build_param_grid(pipeline):
 
 def train_with_cv(train_df):
     """Train a GBTRegressor with 3-fold CV using deterministic fold assignment."""
-    pipeline   = build_pipeline()
+    pipeline = build_pipeline()
     param_grid = build_param_grid(pipeline)
-    evaluator  = RegressionEvaluator(labelCol="label", metricName="rmse")
+    evaluator = RegressionEvaluator(labelCol="label", metricName="rmse")
 
     train_df = train_df.withColumn(
         "fold", F.abs(F.hash("zone_id", "ts_hour")) % 3

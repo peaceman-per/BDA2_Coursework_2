@@ -1,5 +1,5 @@
 """
-tlc_transform.py – Schema harmonisation (Bronze → Silver) for NYC TLC data.
+tlc_transform.py - schema harmonisation (Bronze -> Silver) for NYC TLC data.
 
 Each service type has different column names across years.  The three
 standardise_* functions map each service to a canonical schema so all data
@@ -11,7 +11,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import IntegerType, DoubleType, TimestampType
 from typing import Optional
 
-# ── Canonical column list ────────────────────────────────────────────────────
+############# Canonical column list #############
 #
 # Columns guaranteed to exist after standardisation (nullable where noted):
 #   service_type  str
@@ -68,11 +68,11 @@ def _add_time_cols(df: DataFrame) -> DataFrame:
     """Add year/month/day/hour/dow and trip_duration_sec."""
     df = (
         df
-        .withColumn("year",  F.year("pickup_datetime").cast(IntegerType()))
+        .withColumn("year", F.year("pickup_datetime").cast(IntegerType()))
         .withColumn("month", F.month("pickup_datetime").cast(IntegerType()))
-        .withColumn("day",   F.dayofmonth("pickup_datetime").cast(IntegerType()))
-        .withColumn("hour",  F.hour("pickup_datetime").cast(IntegerType()))
-        .withColumn("dow",   F.dayofweek("pickup_datetime").cast(IntegerType()))
+        .withColumn("day", F.dayofmonth("pickup_datetime").cast(IntegerType()))
+        .withColumn("hour", F.hour("pickup_datetime").cast(IntegerType()))
+        .withColumn("dow", F.dayofweek("pickup_datetime").cast(IntegerType()))
     )
     df = df.withColumn(
         "trip_duration_sec",
@@ -96,12 +96,11 @@ def _add_quality_flags(df: DataFrame) -> DataFrame:
     )
     return df
 
-
-# ── Yellow taxi ──────────────────────────────────────────────────────────────
+############# Yellow taxi #############
 
 def standardize_yellow(df: DataFrame) -> DataFrame:
     """Map Yellow taxi raw columns to canonical schema."""
-    # Column names changed across years; handle both versions
+    # column names changed across years; handle both versions
     pu_col = _find_col(df, "tpep_pickup_datetime", "pickup_datetime")
     do_col = _find_col(df, "tpep_dropoff_datetime", "dropoff_datetime")
     pu_loc = _find_col(df, "PULocationID", "pu_location_id")
@@ -117,18 +116,18 @@ def standardize_yellow(df: DataFrame) -> DataFrame:
     else:
         df = df.withColumn("dropoff_datetime", F.lit(None).cast(TimestampType()))
 
-    df = _coerce_col(df, pu_loc,           "pu_location_id",  IntegerType())
-    df = _coerce_col(df, do_loc,           "do_location_id",  IntegerType())
+    df = _coerce_col(df, pu_loc, "pu_location_id", IntegerType())
+    df = _coerce_col(df, do_loc, "do_location_id", IntegerType())
     df = _coerce_col(df, "passenger_count","passenger_count", IntegerType())
-    df = _coerce_col(df, "trip_distance",  "trip_distance",   DoubleType())
-    df = _coerce_col(df, "fare_amount",    "fare_amount",     DoubleType())
-    df = _coerce_col(df, "total_amount",   "total_amount",    DoubleType())
+    df = _coerce_col(df, "trip_distance", "trip_distance", DoubleType())
+    df = _coerce_col(df, "fare_amount", "fare_amount", DoubleType())
+    df = _coerce_col(df, "total_amount", "total_amount", DoubleType())
     df = _add_time_cols(df)
     df = _add_quality_flags(df)
     return df.select(CANONICAL_COLS)
 
 
-# ── Green taxi ───────────────────────────────────────────────────────────────
+############# Green taxi #############
 
 def standardize_green(df: DataFrame) -> DataFrame:
     """Map Green taxi raw columns to canonical schema."""
@@ -147,18 +146,18 @@ def standardize_green(df: DataFrame) -> DataFrame:
     else:
         df = df.withColumn("dropoff_datetime", F.lit(None).cast(TimestampType()))
 
-    df = _coerce_col(df, pu_loc,           "pu_location_id",  IntegerType())
-    df = _coerce_col(df, do_loc,           "do_location_id",  IntegerType())
+    df = _coerce_col(df, pu_loc, "pu_location_id", IntegerType())
+    df = _coerce_col(df, do_loc, "do_location_id", IntegerType())
     df = _coerce_col(df, "passenger_count","passenger_count", IntegerType())
-    df = _coerce_col(df, "trip_distance",  "trip_distance",   DoubleType())
-    df = _coerce_col(df, "fare_amount",    "fare_amount",     DoubleType())
-    df = _coerce_col(df, "total_amount",   "total_amount",    DoubleType())
+    df = _coerce_col(df, "trip_distance", "trip_distance", DoubleType())
+    df = _coerce_col(df, "fare_amount", "fare_amount", DoubleType())
+    df = _coerce_col(df, "total_amount", "total_amount", DoubleType())
     df = _add_time_cols(df)
     df = _add_quality_flags(df)
     return df.select(CANONICAL_COLS)
 
 
-# ── FHV (For-Hire Vehicle) ────────────────────────────────────────────────────
+############# FHV (For-Hire Vehicle) #############
 
 def standardize_fhv(df: DataFrame) -> DataFrame:
     """
@@ -183,11 +182,11 @@ def standardize_fhv(df: DataFrame) -> DataFrame:
 
     df = _coerce_col(df, pu_loc, "pu_location_id", IntegerType())
     df = _coerce_col(df, do_loc, "do_location_id", IntegerType())
-    # FHV typically lacks these; fill with null
+    # FHV typically lacks these, fill with null
     for col_name, dtype in [("passenger_count", IntegerType()),
-                             ("trip_distance",   DoubleType()),
-                             ("fare_amount",      DoubleType()),
-                             ("total_amount",     DoubleType())]:
+                             ("trip_distance", DoubleType()),
+                             ("fare_amount", DoubleType()),
+                             ("total_amount", DoubleType())]:
         df = df.withColumn(col_name, F.lit(None).cast(dtype))
 
     df = _add_time_cols(df)
@@ -195,12 +194,12 @@ def standardize_fhv(df: DataFrame) -> DataFrame:
     return df.select(CANONICAL_COLS)
 
 
-# ── Dispatcher ───────────────────────────────────────────────────────────────
+############# Dispatcher #############
 
 _STANDARDIZERS = {
     "yellow": standardize_yellow,
-    "green":  standardize_green,
-    "fhv":    standardize_fhv,
+    "green": standardize_green,
+    "fhv": standardize_fhv,
 }
 
 

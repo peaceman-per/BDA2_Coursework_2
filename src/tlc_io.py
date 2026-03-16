@@ -1,5 +1,5 @@
 """
-tlc_io.py – Data ingestion and HDFS I/O helpers for NYC TLC Coursework 2.
+tlc_io.py - Data ingestion and HDFS I/O helpers for NYC TLC Coursework 2.
 """
 
 import re
