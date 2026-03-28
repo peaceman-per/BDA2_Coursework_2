@@ -2,7 +2,7 @@
 
 **Module**: DSM010 Big Data Analytics 2  
 **Cluster**: Lena  
-**Stack**: HDFS - Apache Spark (PySpark) - Spark MLlib - PostgreSQL (JDBC)
+**Stack**: HDFS - Apache Spark (PySpark) - Spark MLlib
 
 ---
 
@@ -69,8 +69,7 @@ BDA2_Coursework_2/
 │   ├── tlc_io.py               - HDFS data loading helpers
 │   ├── tlc_transform.py        - Schema harmonisation (Bronze -> Silver)
 │   ├── tlc_analytics.py        - Gold mart aggregation functions
-│   ├── tlc_ml.py               - Spark MLlib GBT pipeline
-│   └── pg_export.py            - PostgreSQL JDBC export
+│   └── tlc_ml.py               - Spark MLlib GBT pipeline
 ├── scripts/
 │   ├── make_subset.py          - Create =<10 MB HDFS subset
 │   └── capture_submission_evidence.sh
@@ -113,6 +112,5 @@ All tuneable parameters live in `src/tlc_config.py`:
 | 8 | Performance Benchmarking | - |
 | 9 | ML Dataset & Feature Engineering | H4 |
 | 10 | ML Pipeline & Evaluation | H4 |
-| 11 | PostgreSQL Export | - |
-| 12 | Subset Mode Demonstration | - |
-| 13 | Final Summary | - |
+| 11 | Subset Mode Demonstration | - |
+| 12 | Final Summary | - |
